@@ -1,0 +1,191 @@
+package weatherapp;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import org.json.JSONObject;
+
+public class WeatherApp {
+    private JTextField locationInput;
+    private JTextArea weatherOutput;
+    private JButton retrieveButton;
+    private Timer fadeTimer;
+
+    public WeatherApp() {
+        JFrame frame = new JFrame("Weather App");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLayout(new BorderLayout());
+        frame.getContentPane().setBackground(new Color(173, 216, 230)); // Set the background color
+
+        JPanel inputPanel = new JPanel();
+        inputPanel.setLayout(new FlowLayout());
+        JLabel locationLabel = new JLabel("Enter Location:");
+        locationLabel.setFont(new Font("Arial", Font.BOLD, 16)); // Set font and size
+        locationInput = new JTextField(20);
+        locationInput.setFont(new Font("Arial", Font.PLAIN, 16)); // Set font and size for input field
+        inputPanel.add(locationLabel);
+        inputPanel.add(locationInput);
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new FlowLayout());
+        retrieveButton = new JButton("Retrieve Weather");
+        retrieveButton.setFont(new Font("Arial", Font.BOLD, 16)); // Set font and size
+        retrieveButton.setBackground(new Color(60, 179, 113)); // Set button background color
+        retrieveButton.setForeground(Color.WHITE); // Set button text color
+        buttonPanel.add(retrieveButton);
+
+        JPanel resultPanel = new JPanel();
+        resultPanel.setLayout(new BorderLayout());
+        JLabel resultLabel = new JLabel("Weather Information:");
+        resultLabel.setFont(new Font("Arial", Font.BOLD, 16)); // Set font and size
+        weatherOutput = new JTextArea(15, 30);
+        weatherOutput.setEditable(false);
+        weatherOutput.setFont(new Font("Arial", Font.PLAIN, 14)); // Set font and size for output text area
+        weatherOutput.setBackground(new Color(240, 248, 255)); // Set text area background color
+        resultPanel.add(resultLabel, BorderLayout.NORTH);
+        resultPanel.add(new JScrollPane(weatherOutput), BorderLayout.CENTER);
+
+        frame.add(inputPanel, BorderLayout.NORTH);
+        frame.add(buttonPanel, BorderLayout.CENTER);
+        frame.add(resultPanel, BorderLayout.SOUTH);
+
+        retrieveButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String location = locationInput.getText();
+                String weatherData = getWeatherData(location);
+
+                // Start the fade-in animation
+                startFadeInAnimation(weatherData);
+            }
+        });
+
+        fadeTimer = new Timer(50, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (weatherOutput.getBackground().getAlpha() < 255) {
+                    Color newColor = new Color(
+                            weatherOutput.getBackground().getRed(),
+                            weatherOutput.getBackground().getGreen(),
+                            weatherOutput.getBackground().getBlue(),
+                            weatherOutput.getBackground().getAlpha() + 15
+                    );
+                    weatherOutput.setBackground(newColor);
+                } else {
+                    // Stop the timer when the background is fully opaque
+                    fadeTimer.stop();
+                }
+            }
+        });
+
+        frame.pack();
+        frame.setVisible(true);
+    }
+
+    private void startFadeInAnimation(String weatherData) {
+        // Reset the text area's background color to be transparent
+        weatherOutput.setBackground(new Color(240, 248, 255, 0));
+        weatherOutput.setText(weatherData);
+
+        // Start the timer for fade-in animation
+        fadeTimer.start();
+    }
+
+    private String getWeatherData(String location) {
+        String apiKey = "f1257d0d7f1a837117d8d2cad612df6a"; // OpenWeatherMap API key
+        String apiUrl = "https://api.openweathermap.org/data/2.5/weather?q=" + location + "&appid=" + apiKey;
+
+        try {
+            URL url = new URL(apiUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            StringBuilder data = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                data.append(line);
+            }
+            reader.close();
+
+            JSONObject json = new JSONObject(data.toString());
+
+            // Extracting weather information
+            String cityName = json.getString("name");
+            JSONObject main = json.getJSONObject("main");
+            double temperatureKelvin = main.getDouble("temp");
+            double temperatureCelsius = temperatureKelvin - 273.15; // Conversion to Celsius with 2 decimal places
+            String formattedTemperature = String.format("%.2f", temperatureCelsius);
+            String weatherDescription = json.getJSONArray("weather").getJSONObject(0).getString("description");
+
+            // Clothing and accessory recommendations based on weather
+            String recommendations = recommendClothingAndAccessories(formattedTemperature, weatherDescription);
+
+            // Transportation recommendation based on temperature
+            String transportRecommendation = getTransportationRecommendation(temperatureCelsius);
+
+            // Combine weather, clothing, accessory, and transportation recommendations
+            return "City: " + cityName + "\nTemperature: " + formattedTemperature + "°C\nWeather: " + weatherDescription + "\n\n"
+                    + recommendations + "\n" + transportRecommendation;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error retrieving weather data.";
+        }
+    }
+
+    private String recommendClothingAndAccessories(String temperature, String weatherDescription) {
+        String clothingRecommendation;
+        String accessoryRecommendation;
+
+        double temperatureValue = Double.parseDouble(temperature);
+
+        if (temperatureValue < 10) {
+            clothingRecommendation = "Recommendation: Wear a heavy coat, scarf, and gloves.";
+            accessoryRecommendation = "Accessory: Don't forget gloves and a warm hat.";
+        } else if (temperatureValue < 20) {
+            clothingRecommendation = "Recommendation: Wear a jacket and jeans.";
+            accessoryRecommendation = "Accessory: You may want a light scarf.";
+        } else {
+            clothingRecommendation = "Recommendation: It's a warm day; wear light clothing.";
+            accessoryRecommendation = "Accessory: Sunglasses and sunscreen are a good idea.";
+        }
+
+        // Include an umbrella recommendation if it's rainy
+        if (weatherDescription.toLowerCase().contains("rain")) {
+            accessoryRecommendation += " Don't forget to bring an umbrella!";
+        }
+
+        // Combine clothing and accessory recommendations
+        return clothingRecommendation + "\n" + accessoryRecommendation;
+    }
+
+    private String getTransportationRecommendation(double temperatureCelsius) {
+        if (temperatureCelsius < 10) {
+            return "Transportation Recommendation: Due to the cold weather, consider using taxis or rideshare services.";
+        } else if (temperatureCelsius < 20) {
+            return "Transportation Recommendation: Weather is moderate; taxis and public transport like buses are good options.";
+        } else {
+            return "Transportation Recommendation: Enjoy the warm weather! Public transport, such as metros, is a convenient choice.";
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                new WeatherApp();
+            }
+        });
+    }
+}
+
+
+
+
+
+
+
+
