@@ -125,7 +125,7 @@ public class WeatherApp {
             // Clothing and accessory recommendations based on weather
             String recommendations = recommendClothingAndAccessories(formattedTemperature, weatherDescription);
 
-            // Transportation recommendation based on temperature
+            // Transportation recommendation based on temperature and current weather system
             String transportRecommendation = getTransportationRecommendation(temperatureCelsius);
 
             // Combine weather, clothing, accessory, and transportation recommendations
