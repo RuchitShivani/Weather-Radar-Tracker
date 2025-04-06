@@ -6,7 +6,7 @@ Weather Radar Tracker is a Java Swing application that provides real-time weathe
 ✅ Personalized Clothing & Accessories Advice – Suggests outfits based on current weather conditions.
 ✅ Intelligent Transport Suggestions – Recommends suitable transportation modes based on temperature.
 ✅ Smooth Fade-In Animation – Enhances UI with visually appealing transitions.
-✅ User-Friendly Interface – Simple input field, retrieval button, and dynamic display area.
+✅ User-Friendly Interface – Simple input field, retrieval button, and dynamic display.
 
 📂 1. Project Structure
 graphql
